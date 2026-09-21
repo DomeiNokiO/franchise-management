@@ -23,8 +23,6 @@ Aplikasi web multi-cabang berbasis Laravel 11 untuk pengelolaan franchise. Tekno
 
 Fitur lanjutan yang masih perlu dikembangkan:
 
-- CRUD katalog produk, bahan, dan resep melalui UI.
-- POS, resep, dan Purchase Order sudah tersedia pada fondasi ini.
 - Biaya operasional, shift kas, laporan laba/rugi, export laporan, audit log UI, pengaturan brand/logo, manajemen user, dan permission granular adalah fitur lanjutan.
 
 ## Instalasi VPS sekali jalan
@@ -129,6 +127,8 @@ Host Hermes yang dipakai untuk menyiapkan repository ini tidak memiliki PHP, Com
 4. Mitra melihat PO berstatus `shipped` dan memilih `Terima barang`.
 5. Sistem menambah stok cabang dan membuat mutasi stok penerimaan.
 6. Transisi yang tidak sesuai status ditolak oleh service.
+
+Lihat `docs/alur-dan-hak-akses.md` untuk role dan workflow, `docs/katalog-dan-resep.md` untuk katalog pusat, serta `docs/panduan-pengembangan.md` untuk standar perubahan kode.
 
 ## Keamanan dan pemeliharaan
 

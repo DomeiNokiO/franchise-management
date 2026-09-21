@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\IngredientController;
+use App\Http\Controllers\ProductController;
 use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\SaleController;
 use Illuminate\Support\Facades\Route;
@@ -25,4 +27,6 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/purchase-orders/{purchaseOrder}/approve', [PurchaseOrderController::class, 'approve'])->name('purchase-orders.approve');
     Route::post('/purchase-orders/{purchaseOrder}/ship', [PurchaseOrderController::class, 'ship'])->name('purchase-orders.ship');
     Route::post('/purchase-orders/{purchaseOrder}/receive', [PurchaseOrderController::class, 'receive'])->name('purchase-orders.receive');
+    Route::resource('ingredients', IngredientController::class)->except(['show'])->names('ingredients');
+    Route::resource('products', ProductController::class)->except(['show'])->names('products');
 });
