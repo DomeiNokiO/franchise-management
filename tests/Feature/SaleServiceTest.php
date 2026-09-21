@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Branch;
 use App\Models\BranchStock;
 use App\Models\CashTransaction;
+use App\Models\CashShift;
 use App\Models\Ingredient;
 use App\Models\Product;
 use App\Models\Recipe;
@@ -24,6 +25,7 @@ class SaleServiceTest extends TestCase
         $user = User::factory()->create();
         $branch = Branch::create(['name' => 'Cabang A', 'code' => 'A', 'is_active' => true]);
         $user->branches()->attach($branch);
+        CashShift::create(['branch_id' => $branch->id, 'opened_by' => $user->id, 'status' => 'open', 'opening_balance' => 0, 'opened_at' => now()]);
         $ingredient = Ingredient::create(['name' => 'Bahan', 'sku' => 'B-1', 'unit' => 'gram', 'cost' => 100, 'reorder_point' => 1, 'is_active' => true]);
         BranchStock::create(['branch_id' => $branch->id, 'ingredient_id' => $ingredient->id, 'quantity' => 10, 'average_cost' => 100]);
         $product = Product::create(['name' => 'Produk', 'sku' => 'P-1', 'selling_price' => 5000, 'is_active' => true]);
@@ -42,6 +44,7 @@ class SaleServiceTest extends TestCase
         $user = User::factory()->create();
         $branch = Branch::create(['name' => 'Cabang A', 'code' => 'A', 'is_active' => true]);
         $user->branches()->attach($branch);
+        CashShift::create(['branch_id' => $branch->id, 'opened_by' => $user->id, 'status' => 'open', 'opening_balance' => 0, 'opened_at' => now()]);
         $ingredient = Ingredient::create(['name' => 'Bahan', 'sku' => 'B-2', 'unit' => 'gram', 'cost' => 100, 'reorder_point' => 1, 'is_active' => true]);
         BranchStock::create(['branch_id' => $branch->id, 'ingredient_id' => $ingredient->id, 'quantity' => 1, 'average_cost' => 100]);
         $product = Product::create(['name' => 'Produk', 'sku' => 'P-2', 'selling_price' => 5000, 'is_active' => true]);

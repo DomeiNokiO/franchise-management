@@ -80,7 +80,11 @@ class SaleService
                 $stock->save();
                 StockMovement::create(['branch_id' => $branchId, 'ingredient_id' => $ingredientId, 'user_id' => $cashier->id, 'quantity' => -$required, 'balance_after' => $stock->quantity, 'reason' => 'pos_sale', 'reference_type' => Sale::class, 'reference_id' => $sale->id]);
             }
-            CashTransaction::create(['branch_id' => $branchId, 'user_id' => $cashier->id, 'type' => 'income', 'category' => 'penjualan_pos', 'amount' => $total, 'description' => "Penjualan {$sale->receipt_number}", 'occurred_at' => now()]);
+            $shift = \App\Models\CashShift::where('branch_id', $branchId)->where('status', 'open')->lockForUpdate()->first();
+            if (!$shift) {
+                throw ValidationException::withMessages(['shift' => 'Buka shift kasir terlebih dahulu.']);
+            }
+            CashTransaction::create(['branch_id' => $branchId, 'user_id' => $cashier->id, 'cash_shift_id' => $shift->id, 'type' => 'income', 'category' => 'penjualan_pos', 'amount' => $total, 'description' => "Penjualan {$sale->receipt_number}", 'occurred_at' => now()]);
             return $sale->load('items.product');
         });
     }

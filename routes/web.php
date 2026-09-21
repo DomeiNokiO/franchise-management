@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\FinanceController;
 use App\Http\Controllers\IngredientController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\PurchaseOrderController;
@@ -16,6 +17,10 @@ Route::post('/logout', [LoginController::class, 'destroy'])->middleware('auth')-
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::view('/financials', 'financials')->middleware('financial.branch')->name('financials');
+    Route::get('/finance', [FinanceController::class, 'index'])->middleware('financial.branch')->name('finance.index');
+    Route::post('/finance/shifts', [FinanceController::class, 'open'])->middleware('financial.branch')->name('finance.shifts.open');
+    Route::post('/finance/shifts/{cashShift}/close', [FinanceController::class, 'close'])->middleware('financial.branch')->name('finance.shifts.close');
+    Route::post('/finance/transactions', [FinanceController::class, 'transaction'])->middleware('financial.branch')->name('finance.transactions.store');
     Route::get('/sales', [SaleController::class, 'index'])->name('sales.index');
     Route::get('/sales/create', [SaleController::class, 'create'])->name('sales.create');
     Route::post('/sales', [SaleController::class, 'store'])->name('sales.store');

@@ -18,6 +18,7 @@ Aplikasi web multi-cabang berbasis Laravel 11 untuk pengelolaan franchise. Tekno
 - Relasi user-cabang untuk pembatasan data antar mitra.
 - POS dasar: transaksi multi-item, validasi server-side, pengurangan bahan berdasarkan resep, kas masuk, dan detail struk.
 - Purchase Order: pembuatan mitra, persetujuan pusat, pengiriman dengan pengurangan stok pusat, dan penerimaan dengan penambahan stok cabang.
+- Keuangan privat cabang: shift kasir, kas masuk/keluar, rekonsiliasi saldo, dan ringkasan laporan untuk Owner Mitra.
 - Test service POS untuk alur sukses dan penolakan stok tidak cukup.
 - Test service PO untuk alur pending sampai received dan pembatasan role.
 
@@ -118,6 +119,10 @@ php artisan serve
 ```
 
 Host Hermes yang dipakai untuk menyiapkan repository ini tidak memiliki PHP, Composer, MySQL, atau Docker daemon aktif. Karena itu, runtime Laravel, migrasi, dan test browser harus dijalankan di VPS atau CI.
+
+## Keuangan privat cabang
+
+Implementasi shift, kas masuk/keluar, dan ringkasan laporan hanya untuk Owner Mitra dijelaskan di `docs/keuangan-cabang.md`. Full Owner pusat dan Karyawan Mitra ditolak dari laporan keuangan.
 
 ## Alur Purchase Order
 
