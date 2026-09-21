@@ -5,10 +5,10 @@ APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DOMAIN="${1:-}"
 LE_EMAIL="${2:-}"
 
-if [[ "${EUID}" -ne 0 ]]; then echo "Run as root: sudo ./deploy/install.sh domain.tld admin@domain.tld" >&2; exit 1; fi
-if [[ -z "$DOMAIN" || -z "$LE_EMAIL" ]]; then echo "Usage: $0 domain.tld admin@domain.tld" >&2; exit 1; fi
-[[ "$DOMAIN" =~ ^[A-Za-z0-9.-]+$ ]] || { echo "Invalid domain" >&2; exit 1; }
-[[ "$LE_EMAIL" =~ ^[^@[:space:]]+@[^@[:space:]]+\.[^@[:space:]]+$ ]] || { echo "Invalid email" >&2; exit 1; }
+if [[ "${EUID}" -ne 0 ]]; then echo "Jalankan sebagai root: sudo ./deploy/install.sh domain.tld admin@domain.tld" >&2; exit 1; fi
+if [[ -z "$DOMAIN" || -z "$LE_EMAIL" ]]; then echo "Pemakaian: $0 domain.tld admin@domain.tld" >&2; exit 1; fi
+[[ "$DOMAIN" =~ ^[A-Za-z0-9.-]+$ ]] || { echo "Domain tidak valid" >&2; exit 1; }
+[[ "$LE_EMAIL" =~ ^[^@[:space:]]+@[^@[:space:]]+\.[^@[:space:]]+$ ]] || { echo "Email tidak valid" >&2; exit 1; }
 
 apt-get update
 DEBIAN_FRONTEND=noninteractive apt-get install -y ca-certificates curl openssl nginx certbot ufw git
@@ -75,6 +75,7 @@ ufw allow OpenSSH || true
 ufw allow 'Nginx Full' || true
 ufw --force enable || true
 
-echo "Installed: https://$DOMAIN"
-echo "Owner email: owner@$DOMAIN"
-echo "Owner password: $OWNER_PASSWORD"
+echo "Instalasi selesai: https://$DOMAIN"
+echo "Email owner: owner@$DOMAIN"
+echo "Password owner: $OWNER_PASSWORD"
+echo "Simpan password tersebut. Password hanya ditampilkan sekali."
