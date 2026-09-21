@@ -17,19 +17,15 @@ Aplikasi web multi-cabang berbasis Laravel 11 untuk pengelolaan franchise. Tekno
 - Role `full-owner`, `owner-mitra`, dan `karyawan-mitra`.
 - Relasi user-cabang untuk pembatasan data antar mitra.
 - POS dasar: transaksi multi-item, validasi server-side, pengurangan bahan berdasarkan resep, kas masuk, dan detail struk.
-- Owner pusat tidak dapat membuka route laporan keuangan cabang.
-- Dashboard membatasi data stok sesuai cabang yang dimiliki user.
-- Container production PHP-FPM, Nginx, MySQL, volume persisten, dan scheduler.
-- Installer VPS satu perintah dengan secret acak, migrasi database, seed data, firewall, reverse proxy, dan TLS Let's Encrypt.
-
-- Dokumentasi alur bisnis, hak akses, dan panduan pengembangan.
+- Purchase Order: pembuatan mitra, persetujuan pusat, pengiriman dengan pengurangan stok pusat, dan penerimaan dengan penambahan stok cabang.
+- Test service POS untuk alur sukses dan penolakan stok tidak cukup.
+- Test service PO untuk alur pending sampai received dan pembatasan role.
 
 Fitur lanjutan yang masih perlu dikembangkan:
 
 - CRUD katalog produk, bahan, dan resep melalui UI.
-- Purchase Order lengkap: buat, approve, kirim, terima, dan menambah stok.
-- Biaya operasional, shift kas, laporan laba/rugi, dan export laporan.
-- Audit log UI, pengaturan brand/logo, manajemen user, dan permission granular.
+- POS, resep, dan Purchase Order sudah tersedia pada fondasi ini.
+- Biaya operasional, shift kas, laporan laba/rugi, export laporan, audit log UI, pengaturan brand/logo, manajemen user, dan permission granular adalah fitur lanjutan.
 
 ## Instalasi VPS sekali jalan
 
@@ -124,6 +120,15 @@ php artisan serve
 ```
 
 Host Hermes yang dipakai untuk menyiapkan repository ini tidak memiliki PHP, Composer, MySQL, atau Docker daemon aktif. Karena itu, runtime Laravel, migrasi, dan test browser harus dijalankan di VPS atau CI.
+
+## Alur Purchase Order
+
+1. Owner Mitra membuat PO dari menu `PO` untuk cabang miliknya.
+2. Full Owner membuka detail PO dan memilih `Setujui`.
+3. Full Owner memilih `Kirim`; sistem mengunci stok pusat, memastikan stok cukup, lalu mengurangi stok pusat.
+4. Mitra melihat PO berstatus `shipped` dan memilih `Terima barang`.
+5. Sistem menambah stok cabang dan membuat mutasi stok penerimaan.
+6. Transisi yang tidak sesuai status ditolak oleh service.
 
 ## Keamanan dan pemeliharaan
 
