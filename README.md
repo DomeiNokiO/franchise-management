@@ -16,12 +16,20 @@ Aplikasi web multi-cabang berbasis Laravel 11 untuk pengelolaan franchise. Tekno
 - Login dengan validasi, CSRF, regenerasi session, dan cookie aman.
 - Role `full-owner`, `owner-mitra`, dan `karyawan-mitra`.
 - Relasi user-cabang untuk pembatasan data antar mitra.
-- Pengaturan brand/perusahaan: nama brand, badan usaha, logo, kontak, alamat, dan mata uang.
-- Katalog bahan baku, stok cabang, reorder point, purchase order, transaksi kas, dan audit log.
+- POS dasar: transaksi multi-item, validasi server-side, pengurangan bahan berdasarkan resep, kas masuk, dan detail struk.
 - Owner pusat tidak dapat membuka route laporan keuangan cabang.
 - Dashboard membatasi data stok sesuai cabang yang dimiliki user.
 - Container production PHP-FPM, Nginx, MySQL, volume persisten, dan scheduler.
 - Installer VPS satu perintah dengan secret acak, migrasi database, seed data, firewall, reverse proxy, dan TLS Let's Encrypt.
+
+- Dokumentasi alur bisnis, hak akses, dan panduan pengembangan.
+
+Fitur lanjutan yang masih perlu dikembangkan:
+
+- CRUD katalog produk, bahan, dan resep melalui UI.
+- Purchase Order lengkap: buat, approve, kirim, terima, dan menambah stok.
+- Biaya operasional, shift kas, laporan laba/rugi, dan export laporan.
+- Audit log UI, pengaturan brand/logo, manajemen user, dan permission granular.
 
 ## Instalasi VPS sekali jalan
 
