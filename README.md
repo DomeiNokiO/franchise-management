@@ -28,32 +28,62 @@ Fitur lanjutan yang masih perlu dikembangkan:
 
 ## Instalasi VPS sekali jalan
 
-### Prasyarat
+### Prasyarat VPS kosong
 
-1. VPS Debian 12/13 atau Ubuntu 22.04/24.04.
+Installer memasang seluruh dependensi host. Sebelum menjalankan installer, siapkan hanya:
+
+1. VPS Debian 12+ atau Ubuntu 22.04+.
 2. Akses `root` atau user dengan `sudo`.
-3. Domain sudah memiliki DNS A record yang mengarah ke IP VPS.
+3. Domain dengan DNS A record ke IP VPS jika ingin HTTPS.
 4. Port TCP `80` dan `443` tersedia.
-5. Email aktif untuk registrasi Let's Encrypt.
+5. Email aktif untuk Let's Encrypt jika TLS diaktifkan.
+
+Installer otomatis memasang dan memeriksa:
+
+- PHP CLI 8.2+ beserta ekstensi Laravel;
+- Composer;
+- Node.js 20 dan npm;
+- Docker Engine dan Docker Compose;
+- Nginx, Certbot, Git, OpenSSL, UFW, curl, dan utilitas sistem.
+
+PHP, Composer, Node.js, dan MySQL tidak perlu dipasang manual. MySQL berjalan sebagai container Docker.
 
 ### Menjalankan installer
+
+Mode interaktif, direkomendasikan untuk VPS baru:
 
 ```bash
 git clone https://github.com/DomeiNokiO/franchise-management.git
 cd franchise-management
 sudo chmod +x deploy/install.sh
+sudo ./deploy/install.sh
+```
+
+Installer akan menanyakan domain, email TLS, pilihan HTTPS, nama owner, dan email login owner. Password owner dibuat acak dan dicetak satu kali dalam ringkasan akhir.
+
+Mode dengan parameter domain dan email:
+
+```bash
 sudo ./deploy/install.sh app.contoh.com admin@contoh.com
 ```
 
+Mode otomatis untuk DNS yang belum siap:
+
+```bash
+sudo SKIP_TLS=1 OWNER_NAME='Owner Mitra' OWNER_EMAIL='owner@contoh.com' ./deploy/install.sh app.contoh.com admin@contoh.com
+```
+
+`SKIP_TLS=1` hanya untuk pengujian. Untuk mode otomatis production, pastikan DNS sudah aktif dan jangan memakai `SKIP_TLS`.
+
 Installer akan:
 
-1. Memasang Docker, Nginx, Certbot, Git, OpenSSL, dan UFW.
+1. Memasang dan memeriksa PHP, Composer, Node.js, Docker Compose, Nginx, Certbot, Git, OpenSSL, dan UFW.
 2. Membuat `.env` dengan permission `600`.
 3. Membuat `APP_KEY`, password database, password root database, dan password owner secara acak.
 4. Membuat serta menjalankan container aplikasi dan MySQL.
 5. Menjalankan migrasi dan seeder Laravel.
 6. Mengatur Nginx sebagai reverse proxy ke container.
-7. Mengaktifkan HTTPS Let's Encrypt.
+7. Mengaktifkan HTTPS Let's Encrypt bila dipilih.
 8. Mengaktifkan firewall untuk SSH dan Nginx.
 
 Akun owner awal:
