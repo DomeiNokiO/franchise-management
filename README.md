@@ -97,7 +97,35 @@ Simpan password tersebut di password manager, lalu ganti setelah login pertama.
 
 Untuk VM Proxmox yang diakses melalui Cloudflare Tunnel, installer memiliki mode tanpa domain. Domain publik tetap dibuat di Cloudflare, tetapi VM aplikasi tidak memerlukan DNS lokal atau Let's Encrypt.
 
-#### Cloudflared di VM yang sama
+#### Akses langsung melalui IP lokal VM
+
+Jika hanya ingin membuka aplikasi dari jaringan lokal tanpa domain dan tanpa nomor port, gunakan mode IP LAN:
+
+```bash
+sudo NO_DOMAIN=1 \
+  LOCAL_IP=192.168.10.25 \
+  LAN_SUBNET=192.168.10.0/24 \
+  ./deploy/install.sh
+```
+
+Buka dari komputer dalam jaringan yang sama:
+
+```text
+http://192.168.10.25
+```
+
+Installer akan:
+
+- menjalankan Nginx host pada port `80`;
+- meneruskan Nginx ke container aplikasi di `127.0.0.1:8080`;
+- mengisi `APP_URL=http://192.168.10.25`;
+- membuka UFW port `80` hanya dari `192.168.10.0/24`;
+- tidak meminta Let's Encrypt;
+- tidak membutuhkan Cloudflare Tunnel.
+
+Ganti `LOCAL_IP` dan `LAN_SUBNET` sesuai jaringan Proxmox Anda. IP harus merupakan IP yang benar-benar terpasang pada VM aplikasi.
+
+#### Cloudflare Tunnel di VM yang sama
 
 ```bash
 sudo NO_DOMAIN=1 PUBLIC_URL=https://app.example.com HOST_BIND_IP=127.0.0.1 ./deploy/install.sh

@@ -6,9 +6,12 @@ DOMAIN="${1:-}"
 LE_EMAIL="${2:-}"
 NO_DOMAIN="${NO_DOMAIN:-}"
 PUBLIC_URL="${PUBLIC_URL:-}"
+LOCAL_IP="${LOCAL_IP:-}"
+LAN_SUBNET="${LAN_SUBNET:-}"
 HOST_BIND_IP="${HOST_BIND_IP:-127.0.0.1}"
 INSTALL_DEV_TOOLS="${INSTALL_DEV_TOOLS:-1}"
 USE_NGINX=1
+NGINX_SERVER_NAME=""
 
 fail() { echo "ERROR: $*" >&2; exit 1; }
 log() { echo; echo "==> $*"; }
@@ -32,10 +35,28 @@ if [[ "$NO_DOMAIN" == "1" ]]; then
     DOMAIN="localhost"
     LE_EMAIL="none@localhost"
     SKIP_TLS=1
-    USE_NGINX=0
-    if [[ -z "$PUBLIC_URL" ]]; then PUBLIC_URL="$(ask 'URL HTTPS Cloudflare publik (contoh https://app.example.com)' 'http://localhost:8080')"; fi
+    if [[ -z "$LOCAL_IP" ]]; then
+        local_mode="$(ask 'Akses tanpa domain: lokal saja atau IP LAN? (lokal/lan)' 'lokal')"
+        if [[ "$local_mode" =~ ^(lan|ip|jaringan)$ ]]; then
+            default_local_ip="$(hostname -I 2>/dev/null | awk '{print $1}')"
+            LOCAL_IP="$(ask 'IP lokal VM aplikasi' "${default_local_ip:-192.168.1.25}")"
+        fi
+    fi
+    if [[ -n "$LOCAL_IP" ]]; then
+        [[ "$LOCAL_IP" =~ ^[0-9]{1,3}(\.[0-9]{1,3}){3}$ ]] || fail "LOCAL_IP harus berupa alamat IPv4."
+        PUBLIC_URL="http://$LOCAL_IP"
+        NGINX_SERVER_NAME="$LOCAL_IP"
+        HOST_BIND_IP=127.0.0.1
+        if [[ -z "$LAN_SUBNET" ]]; then
+            LAN_SUBNET="$(ask 'Subnet LAN yang boleh mengakses port 80 (CIDR)' '192.168.1.0/24')"
+        fi
+        [[ "$LAN_SUBNET" =~ ^[0-9]{1,3}(\.[0-9]{1,3}){3}/[0-9]{1,2}$ ]] || fail "LAN_SUBNET harus dalam format CIDR, contoh 192.168.1.0/24."
+    else
+        USE_NGINX=0
+    fi
+    if [[ -z "$PUBLIC_URL" ]]; then PUBLIC_URL='http://localhost:8080'; fi
     [[ "$PUBLIC_URL" =~ ^https?:// ]] || fail "PUBLIC_URL harus diawali http:// atau https://."
-    if [[ "$HOST_BIND_IP" == "127.0.0.1" ]]; then
+    if [[ "$USE_NGINX" == "0" && "$HOST_BIND_IP" == "127.0.0.1" ]]; then
         tunnel_location="$(ask 'Cloudflare Tunnel berada di VM yang sama atau VM lain? (sama/lain)' 'sama')"
         if [[ "$tunnel_location" =~ ^(lain|berbeda|other)$ ]]; then
             default_bind="$(hostname -I 2>/dev/null | awk '{print $1}')"
@@ -133,7 +154,7 @@ if [[ "$USE_NGINX" == "1" ]]; then
     cat >/etc/nginx/sites-available/franchise-management <<EOF
 server {
     listen 80;
-    server_name $DOMAIN;
+    server_name ${NGINX_SERVER_NAME:-$DOMAIN};
     location /.well-known/acme-challenge/ { root $APP_DIR/docker/webroot; }
     location / { proxy_pass http://127.0.0.1:8080; proxy_set_header Host \$host; proxy_set_header X-Forwarded-Proto \$scheme; proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for; }
 }
@@ -148,12 +169,12 @@ if [[ "$SKIP_TLS" != "1" && "$NO_DOMAIN" != "1" ]]; then
     cat >/etc/nginx/sites-available/franchise-management <<EOF
 server {
     listen 80;
-    server_name $DOMAIN;
+    server_name ${NGINX_SERVER_NAME:-$DOMAIN};
     return 301 https://\$host\$request_uri;
 }
 server {
     listen 443 ssl http2;
-    server_name $DOMAIN;
+    server_name ${NGINX_SERVER_NAME:-$DOMAIN};
     ssl_certificate /etc/letsencrypt/live/$DOMAIN/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/$DOMAIN/privkey.pem;
     add_header X-Content-Type-Options nosniff always;
@@ -164,8 +185,11 @@ server {
 EOF
     nginx -t && systemctl reload nginx
 fi
-if [[ "$USE_NGINX" == "1" ]]; then
+if [[ "$USE_NGINX" == "1" && "$NO_DOMAIN" != "1" ]]; then
     ufw allow 'Nginx Full' || true
+fi
+if [[ "$NO_DOMAIN" == "1" && -n "$LOCAL_IP" ]]; then
+    ufw allow from "$LAN_SUBNET" to any port 80 proto tcp || true
 fi
 ufw allow OpenSSH || true
 ufw --force enable || true
