@@ -172,6 +172,30 @@ Pada mode ini:
 
 Jangan gunakan `HOST_BIND_IP=0.0.0.0`. Itu akan membuka service ke seluruh interface VM.
 
+### Catatan Proxmox LXC/CT
+
+Installer mendeteksi jika dijalankan di Proxmox LXC/CT. Docker di CT dapat gagal dengan error `failed to mount ... overlayfs ... permission denied`, seperti yang terjadi pada container tanpa fitur nesting.
+
+Rekomendasi production: buat **VM Ubuntu 22.04/24.04**, bukan LXC/CT, lalu jalankan installer di dalam VM. Docker akan memakai kernel VM secara normal.
+
+Jika tetap memakai CT untuk testing, dari host Proxmox aktifkan fitur berikut:
+
+```bash
+pct set <CTID> -features nesting=1,keyctl=1
+pct restart <CTID>
+```
+
+CT privileged lebih kompatibel daripada unprivileged CT, tetapi tetap tidak menjamin semua storage backend mendukung Docker overlayfs. Setelah fitur aktif, jalankan ulang installer dengan:
+
+```bash
+sudo ALLOW_LXC_DOCKER=1 NO_DOMAIN=1 \
+  LOCAL_IP=192.168.10.25 \
+  LAN_SUBNET=192.168.10.0/24 \
+  ./deploy/install.sh
+```
+
+Gunakan opsi tersebut hanya setelah memahami risiko Docker-in-LXC. Jangan menjalankan installer ulang berulang kali tanpa memperbaiki konfigurasi CT terlebih dahulu.
+
 ## Update aplikasi setelah `git pull`
 
 ```bash

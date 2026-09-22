@@ -27,6 +27,14 @@ ask() {
 . /etc/os-release
 case "${ID:-}" in debian|ubuntu) ;; *) fail "OS didukung hanya Debian atau Ubuntu." ;; esac
 
+VIRT_TYPE="$(systemd-detect-virt --container 2>/dev/null || true)"
+if [[ "$VIRT_TYPE" == "lxc" || -f /run/systemd/container && "$(cat /run/systemd/container)" == "lxc" ]]; then
+    if [[ "${ALLOW_LXC_DOCKER:-0}" != "1" ]]; then
+        fail "Proxmox LXC/CT terdeteksi. Docker membutuhkan CT privileged dengan nesting=1 dan keyctl=1; solusi paling stabil adalah Ubuntu VM. Jika tetap ingin mencoba CT, set ALLOW_LXC_DOCKER=1 setelah mengaktifkan fitur tersebut di Proxmox."
+    fi
+    log "Proxmox LXC terdeteksi; melanjutkan dengan risiko Docker overlayfs/cgroup terbatas"
+fi
+
 if [[ -z "$DOMAIN" && "$NO_DOMAIN" != "1" ]]; then
     mode="$(ask 'Mode instalasi: domain atau tanpa domain? (domain/tanpa)' 'domain')"
     [[ "$mode" =~ ^(tanpa|tanpa-domain|local)$ ]] && NO_DOMAIN=1 || NO_DOMAIN=0
@@ -82,7 +90,12 @@ OWNER_PASSWORD="${OWNER_PASSWORD:-$(rand)}"
 log "Memasang paket sistem"
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
-apt-get install -y ca-certificates curl openssl nginx certbot ufw git gnupg lsb-release software-properties-common unzip
+apt-get install -y ca-certificates curl openssl nginx certbot ufw git gnupg lsb-release software-properties-common unzip locales
+if ! locale -a 2>/dev/null | grep -qi '^en_US\.utf-8$'; then
+    sed -i 's/^# *en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen || true
+    locale-gen en_US.UTF-8 || true
+fi
+export LANG="${LANG:-en_US.UTF-8}" LC_ALL="${LC_ALL:-en_US.UTF-8}"
 
 log "Memastikan PHP CLI 8.2+"
 if [[ "$ID" == "ubuntu" ]]; then
