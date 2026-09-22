@@ -7,7 +7,7 @@ services:
       mysql:
         condition: service_healthy
     ports:
-      - "127.0.0.1:8080:80"
+      - "${HOST_BIND_IP:-127.0.0.1}:8080:80"
     volumes:
       - storage:/var/www/html/storage
     networks: [franchise]

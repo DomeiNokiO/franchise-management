@@ -93,15 +93,56 @@ Akun owner awal:
 
 Simpan password tersebut di password manager, lalu ganti setelah login pertama.
 
-### Jika DNS belum siap
+### Instalasi tanpa domain lokal
 
-Untuk menjalankan instalasi tanpa meminta sertifikat TLS:
+Untuk VM Proxmox yang diakses melalui Cloudflare Tunnel, installer memiliki mode tanpa domain. Domain publik tetap dibuat di Cloudflare, tetapi VM aplikasi tidak memerlukan DNS lokal atau Let's Encrypt.
+
+#### Cloudflared di VM yang sama
 
 ```bash
-sudo SKIP_TLS=1 ./deploy/install.sh app.contoh.com admin@contoh.com
+sudo NO_DOMAIN=1 PUBLIC_URL=https://app.example.com HOST_BIND_IP=127.0.0.1 ./deploy/install.sh
 ```
 
-Jangan gunakan mode ini untuk aplikasi publik. Setelah DNS siap, jalankan Certbot secara manual dan ubah konfigurasi Nginx ke HTTPS.
+Arahkan tunnel ke:
+
+```yaml
+ingress:
+  - hostname: app.example.com
+    service: http://127.0.0.1:8080
+  - service: http_status:404
+```
+
+#### Cloudflared di VM berbeda
+
+Jalankan installer di VM aplikasi dan gunakan IP private VM tersebut:
+
+```bash
+sudo NO_DOMAIN=1 PUBLIC_URL=https://app.example.com HOST_BIND_IP=192.168.10.25 ./deploy/install.sh
+```
+
+Saat mode interaktif, pilih `tanpa`, lalu pilih `lain` ketika ditanya lokasi Cloudflare Tunnel dan masukkan IP private VM aplikasi.
+
+Arahkan tunnel ke:
+
+```yaml
+ingress:
+  - hostname: app.example.com
+    service: http://192.168.10.25:8080
+  - service: http_status:404
+```
+
+Pada mode ini:
+
+- tidak meminta sertifikat Let's Encrypt;
+- tidak membuat konfigurasi Nginx host;
+- aplikasi berjalan di container pada port host `8080`;
+- `APP_URL` diisi URL Cloudflare publik agar link/login Laravel benar;
+- binding default hanya `127.0.0.1`;
+- binding berubah ke IP private yang Anda masukkan hanya jika tunnel berada di VM lain;
+- UFW tidak membuka port HTTP/HTTPS, sehingga akses publik tetap melalui tunnel;
+- port `8080` harus diizinkan hanya dari IP VM `cloudflared` pada firewall jaringan Proxmox/VM.
+
+Jangan gunakan `HOST_BIND_IP=0.0.0.0`. Itu akan membuka service ke seluruh interface VM.
 
 ## Update aplikasi setelah `git pull`
 

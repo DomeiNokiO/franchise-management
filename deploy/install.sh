@@ -4,8 +4,11 @@ set -Eeuo pipefail
 APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DOMAIN="${1:-}"
 LE_EMAIL="${2:-}"
-SKIP_TLS="${SKIP_TLS:-}"
+NO_DOMAIN="${NO_DOMAIN:-}"
+PUBLIC_URL="${PUBLIC_URL:-}"
+HOST_BIND_IP="${HOST_BIND_IP:-127.0.0.1}"
 INSTALL_DEV_TOOLS="${INSTALL_DEV_TOOLS:-1}"
+USE_NGINX=1
 
 fail() { echo "ERROR: $*" >&2; exit 1; }
 log() { echo; echo "==> $*"; }
@@ -21,16 +24,37 @@ ask() {
 . /etc/os-release
 case "${ID:-}" in debian|ubuntu) ;; *) fail "OS didukung hanya Debian atau Ubuntu." ;; esac
 
-if [[ -z "$DOMAIN" ]]; then DOMAIN="$(ask 'Domain aplikasi' 'app.contoh.com')"; fi
-if [[ -z "$LE_EMAIL" ]]; then LE_EMAIL="$(ask "Email untuk TLS Let's Encrypt" 'admin@contoh.com')"; fi
-[[ "$DOMAIN" =~ ^[A-Za-z0-9.-]+$ ]] || fail "Domain tidak valid."
-[[ "$LE_EMAIL" =~ ^[^@[:space:]]+@[^@[:space:]]+\.[^@[:space:]]+$ ]] || fail "Email tidak valid."
-if [[ -z "$SKIP_TLS" ]]; then
-    tls_answer="$(ask "Aktifkan HTTPS Let's Encrypt? (DNS harus sudah mengarah)" 'y')"
-    [[ "$tls_answer" =~ ^[Yy]$ ]] && SKIP_TLS=0 || SKIP_TLS=1
+if [[ -z "$DOMAIN" && "$NO_DOMAIN" != "1" ]]; then
+    mode="$(ask 'Mode instalasi: domain atau tanpa domain? (domain/tanpa)' 'domain')"
+    [[ "$mode" =~ ^(tanpa|tanpa-domain|local)$ ]] && NO_DOMAIN=1 || NO_DOMAIN=0
+fi
+if [[ "$NO_DOMAIN" == "1" ]]; then
+    DOMAIN="localhost"
+    LE_EMAIL="none@localhost"
+    SKIP_TLS=1
+    USE_NGINX=0
+    if [[ -z "$PUBLIC_URL" ]]; then PUBLIC_URL="$(ask 'URL HTTPS Cloudflare publik (contoh https://app.example.com)' 'http://localhost:8080')"; fi
+    [[ "$PUBLIC_URL" =~ ^https?:// ]] || fail "PUBLIC_URL harus diawali http:// atau https://."
+    if [[ "$HOST_BIND_IP" == "127.0.0.1" ]]; then
+        tunnel_location="$(ask 'Cloudflare Tunnel berada di VM yang sama atau VM lain? (sama/lain)' 'sama')"
+        if [[ "$tunnel_location" =~ ^(lain|berbeda|other)$ ]]; then
+            default_bind="$(hostname -I 2>/dev/null | awk '{print $1}')"
+            HOST_BIND_IP="$(ask 'IP private VM aplikasi yang boleh diakses cloudflared' "${default_bind:-192.168.1.25}")"
+        fi
+    fi
+    [[ "$HOST_BIND_IP" =~ ^(127\.0\.0\.1|localhost|[0-9]{1,3}(\.[0-9]{1,3}){3})$ ]] || fail "HOST_BIND_IP harus localhost atau alamat IPv4 private yang valid."
+else
+    if [[ -z "$DOMAIN" ]]; then DOMAIN="$(ask 'Domain aplikasi' 'app.contoh.com')"; fi
+    if [[ -z "$LE_EMAIL" ]]; then LE_EMAIL="$(ask "Email untuk TLS Let's Encrypt" 'admin@contoh.com')"; fi
+    [[ "$DOMAIN" =~ ^[A-Za-z0-9.-]+$ ]] || fail "Domain tidak valid."
+    [[ "$LE_EMAIL" =~ ^[^@[:space:]]+@[^@[:space:]]+\.[^@[:space:]]+$ ]] || fail "Email tidak valid."
+    if [[ -z "$SKIP_TLS" ]]; then
+        tls_answer="$(ask "Aktifkan HTTPS Let's Encrypt? (DNS harus sudah mengarah)" 'y')"
+        [[ "$tls_answer" =~ ^[Yy]$ ]] && SKIP_TLS=0 || SKIP_TLS=1
+    fi
 fi
 if [[ -z "${OWNER_NAME:-}" ]]; then OWNER_NAME="$(ask 'Nama Full Owner awal' 'Full Owner')"; fi
-if [[ -z "${OWNER_EMAIL:-}" ]]; then OWNER_EMAIL="$(ask 'Email login Full Owner awal' "owner@$DOMAIN")"; fi
+    if [[ -z "${OWNER_EMAIL:-}" ]]; then OWNER_EMAIL="$(ask 'Email login Full Owner awal' 'owner@local.test')"; fi
 [[ "$OWNER_EMAIL" =~ ^[^@[:space:]]+@[^@[:space:]]+\.[^@[:space:]]+$ ]] || fail "Email owner tidak valid."
 OWNER_PASSWORD="${OWNER_PASSWORD:-$(rand)}"
 
@@ -78,11 +102,12 @@ chmod 600 .env
 APP_KEY="base64:$(openssl rand -base64 32)"
 DB_PASSWORD="$(rand)"
 DB_ROOT_PASSWORD="$(rand)"
-APP_URL="http://$DOMAIN"
-[[ "$SKIP_TLS" != "1" ]] && APP_URL="https://$DOMAIN"
+APP_URL="${PUBLIC_URL:-http://$DOMAIN}"
+[[ "$SKIP_TLS" != "1" && "$NO_DOMAIN" != "1" ]] && APP_URL="https://$DOMAIN"
 sed -i \
     -e "s|^APP_KEY=.*|APP_KEY=$APP_KEY|" \
     -e "s|^APP_URL=.*|APP_URL=$APP_URL|" \
+    -e "s|^HOST_BIND_IP=.*|HOST_BIND_IP=$HOST_BIND_IP|" \
     -e "s|^DB_PASSWORD=.*|DB_PASSWORD=$DB_PASSWORD|" \
     -e "s|^DB_ROOT_PASSWORD=.*|DB_ROOT_PASSWORD=$DB_ROOT_PASSWORD|" \
     -e "s|^SEED_OWNER_NAME=.*|SEED_OWNER_NAME=\"$OWNER_NAME\"|" \
@@ -102,9 +127,10 @@ docker compose exec -T app php artisan db:seed --force
 docker compose exec -T app php artisan storage:link || true
 docker compose exec -T app php artisan optimize
 
-log "Mengatur Nginx reverse proxy"
-mkdir -p "$APP_DIR/docker/webroot"
-cat >/etc/nginx/sites-available/franchise-management <<EOF
+if [[ "$USE_NGINX" == "1" ]]; then
+    log "Mengatur Nginx reverse proxy"
+    mkdir -p "$APP_DIR/docker/webroot"
+    cat >/etc/nginx/sites-available/franchise-management <<EOF
 server {
     listen 80;
     server_name $DOMAIN;
@@ -112,10 +138,11 @@ server {
     location / { proxy_pass http://127.0.0.1:8080; proxy_set_header Host \$host; proxy_set_header X-Forwarded-Proto \$scheme; proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for; }
 }
 EOF
-ln -sfn /etc/nginx/sites-available/franchise-management /etc/nginx/sites-enabled/franchise-management
-nginx -t && systemctl reload nginx
+    ln -sfn /etc/nginx/sites-available/franchise-management /etc/nginx/sites-enabled/franchise-management
+    nginx -t && systemctl reload nginx
+fi
 
-if [[ "$SKIP_TLS" != "1" ]]; then
+if [[ "$SKIP_TLS" != "1" && "$NO_DOMAIN" != "1" ]]; then
     log "Meminta sertifikat Let's Encrypt"
     certbot certonly --webroot -w "$APP_DIR/docker/webroot" -d "$DOMAIN" --email "$LE_EMAIL" --agree-tos --no-eff-email --non-interactive
     cat >/etc/nginx/sites-available/franchise-management <<EOF
@@ -137,17 +164,30 @@ server {
 EOF
     nginx -t && systemctl reload nginx
 fi
+if [[ "$USE_NGINX" == "1" ]]; then
+    ufw allow 'Nginx Full' || true
+fi
 ufw allow OpenSSH || true
-ufw allow 'Nginx Full' || true
 ufw --force enable || true
 
 SCHEME="http"
-[[ "$SKIP_TLS" != "1" ]] && SCHEME="https"
+if [[ "$NO_DOMAIN" == "1" ]]; then
+    DISPLAY_URL="$PUBLIC_URL"
+elif [[ "$SKIP_TLS" != "1" ]]; then
+    SCHEME="https"
+    DISPLAY_URL="$SCHEME://$DOMAIN"
+else
+    DISPLAY_URL="http://$DOMAIN"
+fi
 echo
 echo "============================================================"
 echo "INSTALASI SELESAI"
 echo "============================================================"
-echo "URL aplikasi       : $SCHEME://$DOMAIN"
+echo "URL aplikasi       : $DISPLAY_URL"
+if [[ "$NO_DOMAIN" == "1" ]]; then
+    echo "Akses lokal        : http://127.0.0.1:8080"
+    echo "Cloudflare Tunnel  : arahkan service ke http://127.0.0.1:8080"
+fi
 echo "Nama owner         : $OWNER_NAME"
 echo "Email login        : $OWNER_EMAIL"
 echo "Password login     : $OWNER_PASSWORD"
