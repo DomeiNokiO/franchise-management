@@ -10,7 +10,7 @@
 .env.backup
 .env.production
 .env.testing
-/composer.lock
+#/composer.lock
 .phpunit.result.cache
 Homestead.json
 Homestead.yaml

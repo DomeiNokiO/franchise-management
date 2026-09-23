@@ -279,3 +279,5 @@ Lihat `docs/alur-dan-hak-akses.md` untuk role dan workflow, `docs/katalog-dan-re
 - `deploy/backup.sh` - backup database.
 - `compose.yaml` - service aplikasi dan MySQL.
 - `docker/` - konfigurasi Nginx dan Supervisor.
+- `Dockerfile` memasang dependency production memakai `composer.lock` bila tersedia; pada checkout lama tanpa lockfile, build melakukan resolusi satu kali dari constraint yang sudah diperbarui.
+- Setelah dependency stabil, commit `composer.lock` dari environment Docker/CI agar build production sepenuhnya deterministik.

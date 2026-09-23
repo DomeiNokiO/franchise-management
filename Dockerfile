@@ -4,7 +4,12 @@ RUN apk add --no-cache icu-dev oniguruma-dev libzip-dev mysql-client bash nginx 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 WORKDIR /var/www/html
 COPY composer.json ./
-RUN composer install --no-dev --prefer-dist --no-interaction --no-progress --no-scripts
+COPY composer.lock* ./
+RUN if [ -f composer.lock ]; then \
+        composer install --no-dev --prefer-dist --no-interaction --no-progress --no-scripts; \
+    else \
+        composer update --no-dev --prefer-dist --no-interaction --no-progress --no-scripts; \
+    fi
 COPY . .
 RUN composer dump-autoload --optimize \
     && chown -R www-data:www-data storage bootstrap/cache
