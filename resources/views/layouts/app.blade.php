@@ -20,23 +20,44 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.6.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@4.0.0-rc4/dist/css/adminlte.min.css">
     <style>
-        :root { --app-sidebar: #17202b; --app-accent: #0d6efd; }
-        body { min-width: 320px; }
-        .app-sidebar { background: var(--app-sidebar); }
-        .app-sidebar .brand-link { border-bottom: 1px solid rgba(255,255,255,.1); }
-        .app-sidebar .nav-link { color: rgba(255,255,255,.78); }
-        .app-sidebar .nav-link:hover, .app-sidebar .nav-link.active { color: #fff; background: rgba(13,110,253,.85); }
+        :root { --app-sidebar: #101827; --app-accent: #2563eb; --app-bg: #f4f7fb; --app-border: #e6ebf2; }
+        body { min-width: 320px; background: var(--app-bg); color: #172033; }
+        .app-wrapper { min-height: 100vh; }
+        .app-header { height: 4rem; box-shadow: 0 1px 0 rgba(16,24,39,.06); }
+        .app-header .navbar-brand { color: #172033; }
+        .app-sidebar { background: var(--app-sidebar); box-shadow: 8px 0 24px rgba(16,24,39,.08); }
+        .app-sidebar .brand-link { min-height: 4rem; border-bottom: 1px solid rgba(255,255,255,.08); display: flex; align-items: center; }
+        .app-sidebar .brand-text { color: #fff; letter-spacing: .01em; }
+        .app-sidebar .nav-header { color: rgba(255,255,255,.42); font-size: .7rem; text-transform: uppercase; letter-spacing: .08em; }
+        .app-sidebar .nav-link { color: rgba(255,255,255,.72); border-radius: .65rem; padding: .7rem .8rem; transition: background .15s ease, color .15s ease; }
+        .app-sidebar .nav-link:hover, .app-sidebar .nav-link.active { color: #fff; background: rgba(37,99,235,.9); }
         .app-sidebar .nav-icon { width: 1.4rem; text-align: center; margin-right: .55rem; }
-        .content-wrapper { min-height: calc(100vh - 57px); }
-        .content-header { padding: 1.25rem 1.5rem .5rem; }
-        .content { padding: 0 1.5rem 1.5rem; }
-        .card { border: 1px solid rgba(0,0,0,.08); box-shadow: 0 2px 8px rgba(20,30,40,.04); }
+        .app-main { background: var(--app-bg); }
+        .content-header { padding: 1.5rem 1.5rem .65rem; }
+        .content-header h1 { font-weight: 700; letter-spacing: -.02em; }
+        .content { padding: 0 1.5rem 2rem; }
+        .card { border: 1px solid var(--app-border); border-radius: .85rem; box-shadow: 0 4px 18px rgba(16,24,39,.045); }
+        .card-header { background: #fff; border-bottom: 1px solid var(--app-border); padding: 1rem 1.15rem; }
+        .card-footer { background: #fff; border-top: 1px solid var(--app-border); }
+        .table { margin-bottom: 0; }
+        .table thead th { color: #667085; font-size: .72rem; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; background: #f8fafc; border-bottom-width: 1px; }
+        .table td { vertical-align: middle; }
+        .btn { border-radius: .55rem; }
+        .btn-primary { background: var(--app-accent); border-color: var(--app-accent); }
+        .page-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+        .page-toolbar .subtitle { color: #667085; font-size: .9rem; margin: .2rem 0 0; }
+        .stat-card { border: 0; overflow: hidden; position: relative; }
+        .stat-card .stat-icon { width: 2.75rem; height: 2.75rem; display: grid; place-items: center; border-radius: .75rem; background: rgba(37,99,235,.1); color: var(--app-accent); }
+        .alert { border-radius: .7rem; border: 0; }
         @media (max-width: 991.98px) {
             .app-sidebar { position: fixed; inset: 0 auto 0 0; z-index: 1050; width: 280px; transform: translateX(-100%); transition: transform .2s ease; }
             body.sidebar-open .app-sidebar { transform: translateX(0); }
             body.sidebar-open::after { content: ''; position: fixed; inset: 0; z-index: 1040; background: rgba(0,0,0,.45); }
-            .content-header { padding: 1rem 1rem .5rem; }
-            .content { padding: 0 1rem 1rem; }
+            .content-header { padding: 1.1rem 1rem .55rem; }
+            .content { padding: 0 1rem 1.25rem; }
+            .page-toolbar { align-items: flex-start; flex-direction: column; }
+            .page-toolbar .btn { width: 100%; }
+            .table-responsive { border-radius: .7rem; }
         }
     </style>
 </head>
@@ -75,7 +96,11 @@
     </aside>
     <main class="app-main">
         <div class="app-content-header"><div class="container-fluid content-header"><h1 class="h4 m-0">@yield('heading', 'Dashboard')</h1></div></div>
-        <div class="app-content"><div class="container-fluid content">@yield('content')</div></div>
+        <div class="app-content"><div class="container-fluid content">
+            @if(session('success'))<div class="alert alert-success d-flex align-items-center gap-2" role="alert"><i class="fa-solid fa-circle-check"></i><span>{{ session('success') }}</span></div>@endif
+            @if($errors->any())<div class="alert alert-danger" role="alert"><div class="fw-semibold mb-1">Periksa input Anda</div><ul class="mb-0">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
+            @yield('content')
+        </div></div>
     </main>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
