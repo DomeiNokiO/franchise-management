@@ -1,4 +1,4 @@
-{% extends 'layouts.app' %}
+@extends('layouts.app')
 @section('content')
 <div class="container-fluid py-4">
     <h1 class="h3 mb-4">Dashboard</h1>
