@@ -137,11 +137,14 @@ APP_KEY="base64:$(openssl rand -base64 32)"
 DB_PASSWORD="$(rand)"
 DB_ROOT_PASSWORD="$(rand)"
 APP_URL="${PUBLIC_URL:-http://$DOMAIN}"
-[[ "$SKIP_TLS" != "1" && "$NO_DOMAIN" != "1" ]] && APP_URL="https://$DOMAIN"
+if [[ "$NO_DOMAIN" != "1" && "$SKIP_TLS" != "1" ]]; then APP_URL="https://$DOMAIN"; fi
+SESSION_SECURE_COOKIE=false
+[[ "$APP_URL" == https://* ]] && SESSION_SECURE_COOKIE=true
 sed -i \
     -e "s|^APP_KEY=.*|APP_KEY=$APP_KEY|" \
     -e "s|^APP_URL=.*|APP_URL=$APP_URL|" \
     -e "s|^HOST_BIND_IP=.*|HOST_BIND_IP=$HOST_BIND_IP|" \
+    -e "s|^SESSION_SECURE_COOKIE=.*|SESSION_SECURE_COOKIE=$SESSION_SECURE_COOKIE|" \
     -e "s|^DB_PASSWORD=.*|DB_PASSWORD=$DB_PASSWORD|" \
     -e "s|^DB_ROOT_PASSWORD=.*|DB_ROOT_PASSWORD=$DB_ROOT_PASSWORD|" \
     -e "s|^SEED_OWNER_NAME=.*|SEED_OWNER_NAME=\"$OWNER_NAME\"|" \
@@ -169,7 +172,8 @@ server {
     listen 80;
     server_name ${NGINX_SERVER_NAME:-$DOMAIN};
     location /.well-known/acme-challenge/ { root $APP_DIR/docker/webroot; }
-    location / { proxy_pass http://127.0.0.1:8080; proxy_set_header Host \$host; proxy_set_header X-Forwarded-Proto \$scheme; proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for; }
+    location = / { return 302 /login; }
+    location / { proxy_pass http://127.0.0.1:8080; proxy_set_header Host \$host; proxy_set_header X-Real-IP \$remote_addr; proxy_set_header X-Forwarded-Proto \$scheme; proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for; proxy_set_header X-Forwarded-Host \$host; }
 }
 EOF
     ln -sfn /etc/nginx/sites-available/franchise-management /etc/nginx/sites-enabled/franchise-management
@@ -207,6 +211,13 @@ if [[ "$NO_DOMAIN" == "1" && -n "$LOCAL_IP" ]]; then
 fi
 ufw allow OpenSSH || true
 ufw --force enable || true
+
+if [[ "$USE_NGINX" == "1" && "$NO_DOMAIN" == "1" && -n "$LOCAL_IP" ]]; then
+    nginx_url="http://127.0.0.1"
+    root_status="$(curl -sS -o /dev/null -w '%{http_code}' "$nginx_url/")"
+    login_status="$(curl -sS -o /dev/null -w '%{http_code}' "$nginx_url/login")"
+    [[ "$root_status" == "302" && "$login_status" == "200" ]] || fail "Smoke check Nginx gagal: /=$root_status /login=$login_status. Periksa nginx -T dan docker compose logs app."
+fi
 
 SCHEME="http"
 if [[ "$NO_DOMAIN" == "1" ]]; then

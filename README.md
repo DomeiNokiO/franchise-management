@@ -125,6 +125,8 @@ Installer akan:
 
 Ganti `LOCAL_IP` dan `LAN_SUBNET` sesuai jaringan Proxmox Anda. IP harus merupakan IP yang benar-benar terpasang pada VM aplikasi.
 
+Jika login HTTP menampilkan `419 Page Expired`, pastikan `.env` berisi `SESSION_SECURE_COOKIE=false`. Mode IP LAN tidak memakai HTTPS sehingga cookie secure harus dimatikan. Installer terbaru mengatur ini otomatis.
+
 #### Cloudflare Tunnel di VM yang sama
 
 ```bash
