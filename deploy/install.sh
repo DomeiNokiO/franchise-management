@@ -173,6 +173,7 @@ server {
 }
 EOF
     ln -sfn /etc/nginx/sites-available/franchise-management /etc/nginx/sites-enabled/franchise-management
+    rm -f /etc/nginx/sites-enabled/default
     nginx -t && systemctl reload nginx
 fi
 
