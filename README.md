@@ -1,9 +1,9 @@
 # Sistem Manajemen Franchise
 
-Aplikasi web multi-cabang berbasis Laravel 11 untuk pengelolaan franchise. Teknologi utama:
+Aplikasi web multi-cabang berbasis Laravel 12 untuk pengelolaan franchise. Teknologi utama:
 
-- Laravel 11 dan PHP 8.3
-- MySQL 8.4
+- Laravel 12 dan PHP 8.3
+- MySQL 8.0.36
 - Docker Compose
 - AdminLTE 4 dan Bootstrap 5 melalui CDN
 - Spatie Laravel Permission untuk RBAC
