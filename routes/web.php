@@ -9,6 +9,10 @@ use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\SaleController;
 use Illuminate\Support\Facades\Route;
 
+Route::get('/', function () {
+    return auth()->check() ? redirect()->route('dashboard') : redirect()->route('login');
+});
+
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'create'])->name('login');
     Route::post('/login', [LoginController::class, 'store'])->name('login.store');
