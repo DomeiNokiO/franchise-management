@@ -57,4 +57,42 @@ class User extends Authenticatable
     {
         return $this->hasRole('full-owner');
     }
+
+    public function isBranchOwner(): bool
+    {
+        return $this->hasRole('owner-mitra');
+    }
+
+    public function isStaff(): bool
+    {
+        return $this->hasRole('karyawan-mitra');
+    }
+
+    /** Label role untuk tampilan UI. */
+    public function roleLabel(): string
+    {
+        return match (true) {
+            $this->isCentralOwner() => 'Full Owner',
+            $this->isBranchOwner() => 'Owner Mitra',
+            $this->isStaff() => 'Karyawan',
+            default => 'Akses Terbatas',
+        };
+    }
+
+    /**
+     * ID cabang aktif untuk pengguna cabang:
+     * ambil dari session bila valid, selain itu cabang pertama.
+     */
+    public function activeBranchId(): ?int
+    {
+        if ($this->isCentralOwner()) {
+            return null;
+        }
+        $ids = $this->branches()->where('is_active', true)->orderBy('name')->pluck('branches.id');
+        $session = (int) session('active_branch_id', 0);
+        if ($session > 0 && $ids->contains($session)) {
+            return $session;
+        }
+        return $ids->first();
+    }
 }

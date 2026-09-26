@@ -28,4 +28,14 @@ class Branch extends Model
     {
         return $this->hasMany(CashTransaction::class);
     }
+
+    public function stocks(): HasMany
+    {
+        return $this->hasMany(BranchStock::class);
+    }
+
+    public function openShift()
+    {
+        return $this->hasMany(CashShift::class)->where('status', 'open');
+    }
 }

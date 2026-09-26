@@ -5,11 +5,11 @@ Aplikasi web multi-cabang berbasis Laravel 12 untuk pengelolaan franchise. Tekno
 - Laravel 12 dan PHP 8.3
 - MySQL 8.0.36
 - Docker Compose
-- AdminLTE 4 dan Bootstrap 5 melalui CDN
+- Bootstrap 5, Font Awesome, dan DataTables 1.13 (serverside) melalui CDN
 - Spatie Laravel Permission untuk RBAC
 - Nginx, Certbot, dan Let's Encrypt untuk HTTPS
 
-> **Status saat ini:** repository ini berisi fondasi aplikasi yang aman dan siap dideploy. Modul POS lengkap, resep dan pengurangan stok otomatis, alur PO lengkap, biaya operasional, serta laporan laba/rugi masih perlu dikembangkan sebagai fitur lanjutan yang diuji satu per satu.
+> **Status saat ini:** seluruh modul inti sudah terbangun dan diuji: POS lengkap (2-pane, resep, stok otomatis, shift kasir wajib), alur PO lengkap (pending → approved/rejected → shipped → received), keuangan cabang (shift, kas, laporan), katalog bahan & produk, dashboard, serta UI responsif dengan modal dan tabel serverside. Dokumentasi per modul ada di `docs/`.
 
 ## Fitur fondasi
 
@@ -24,7 +24,19 @@ Aplikasi web multi-cabang berbasis Laravel 12 untuk pengelolaan franchise. Tekno
 
 Fitur lanjutan yang masih perlu dikembangkan:
 
-- Biaya operasional, shift kas, laporan laba/rugi, export laporan, audit log UI, pengaturan brand/logo, manajemen user, dan permission granular adalah fitur lanjutan.
+- Laporan laba/rugi per cabang (di luar omzet & pengeluaran kas), export CSV/PDF,
+  audit log UI, pengaturan brand/logo, manajemen user mandiri, dan permission
+  granular.
+
+## Dokumen
+
+| File | Isi |
+|---|---|
+| `docs/arsitektur.md` | Arsitektur keseluruhan, skema, RBAC |
+| `docs/pos.md` | Modul kasir: alur, validasi, keamanan |
+| `docs/purchase-order.md` | Alur PO 4 tahap + endpoint |
+| `docs/keuangan-cabang.md` | Shift, transaksi kas, laporan, privasi |
+| `docs/ui.md` | Prinsip UI, endpoint DataTables, fragment form |
 
 ## Instalasi VPS sekali jalan
 

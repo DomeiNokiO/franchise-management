@@ -46,6 +46,18 @@ class PurchaseOrderService
         });
     }
 
+    public function reject(User $user, PurchaseOrder $po): PurchaseOrder
+    {
+        $this->assertRole($user, 'full-owner');
+        $this->assertStatus($po, 'pending');
+        return DB::transaction(function () use ($user, $po) {
+            $po = PurchaseOrder::lockForUpdate()->findOrFail($po->id);
+            $this->assertStatus($po, 'pending');
+            $po->update(['status' => 'rejected', 'approved_by' => $user->id, 'approved_at' => now()]);
+            return $po->fresh('items.ingredient', 'branch');
+        });
+    }
+
     public function ship(User $user, PurchaseOrder $po): PurchaseOrder
     {
         $this->assertRole($user, 'full-owner');

@@ -12,5 +12,6 @@ class PurchaseOrder extends Model
     protected $casts = ['ordered_at' => 'datetime', 'approved_at' => 'datetime', 'received_at' => 'datetime'];
     public function branch(): BelongsTo { return $this->belongsTo(Branch::class); }
     public function creator(): BelongsTo { return $this->belongsTo(User::class, 'created_by'); }
+    public function approver(): BelongsTo { return $this->belongsTo(User::class, 'approved_by'); }
     public function items(): HasMany { return $this->hasMany(PurchaseOrderItem::class); }
 }

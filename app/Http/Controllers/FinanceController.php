@@ -19,8 +19,10 @@ class FinanceController extends Controller
         $from = $request->input('from', now()->startOfMonth()->toDateString());
         $to = $request->input('to', now()->toDateString());
         $report = $branchId ? $finance->report($request->user(), $branchId, $from, $to) : null;
-        $openShifts = CashShift::whereIn('branch_id', $branches->pluck('id'))->where('status', 'open')->with('branch')->get();
-        return view('finance.index', compact('branches', 'branchId', 'from', 'to', 'report', 'openShifts'));
+        $openShifts = CashShift::whereIn('branch_id', $branches->pluck('id'))->where('status', 'open')->with(['branch', 'opener'])->get();
+        $closedShifts = CashShift::whereIn('branch_id', $branches->pluck('id'))->where('status', 'closed')
+            ->with(['branch', 'opener', 'closer'])->orderByDesc('closed_at')->take(10)->get();
+        return view('finance.index', compact('branches', 'branchId', 'from', 'to', 'report', 'openShifts', 'closedShifts'));
     }
 
     public function open(Request $request, FinanceService $finance): RedirectResponse

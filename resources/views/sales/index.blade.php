@@ -1,4 +1,50 @@
 @extends('layouts.app')
+
 @section('content')
-<div class="container-fluid py-4"><div class="d-flex justify-content-between align-items-center mb-3"><h1 class="h3">Penjualan POS</h1><a href="{{ route('sales.create') }}" class="btn btn-primary">Transaksi Baru</a></div>@if(session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif<div class="card"><div class="table-responsive"><table class="table mb-0"><thead><tr><th>Struk</th><th>Cabang</th><th>Kasir</th><th>Waktu</th><th class="text-end">Total</th><th></th></tr></thead><tbody>@forelse($sales as $sale)<tr><td>{{ $sale->receipt_number }}</td><td>{{ $sale->branch->name }}</td><td>{{ $sale->cashier->name }}</td><td>{{ $sale->sold_at->format('d/m/Y H:i') }}</td><td class="text-end">Rp {{ number_format($sale->total, 0, ',', '.') }}</td><td><a href="{{ route('sales.show', $sale) }}">Detail</a></td></tr>@empty<tr><td colspan="6" class="text-center py-4">Belum ada transaksi.</td></tr>@endforelse</tbody></table></div><div class="card-footer">{{ $sales->links() }}</div></div></div>
+<div class="page-head">
+    <div>
+        <h1>Penjualan</h1>
+        <p>Riwayat transaksi POS di cabang Anda ({{ auth()->user()->isCentralOwner() ? 'seluruh cabang' : 'akses Anda' }}).</p>
+    </div>
+    <a href="{{ route('sales.create') }}" class="btn btn-primary"><i class="fa-solid fa-cash-register me-1"></i>Transaksi Baru</a>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table id="salesTable" class="table">
+            <thead>
+                <tr>
+                    <th>Struk</th>
+                    <th>Cabang</th>
+                    <th>Kasir</th>
+                    <th>Waktu</th>
+                    <th class="text-end">Total</th>
+                    <th class="text-end">Aksi</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+
+@push('scripts')
+<script>
+App.dt('salesTable', {
+    url: @json(route('sales.data')),
+    order: [[3, 'desc']],
+    pageLength: 10,
+    columns: [
+        { data: 'receipt_number', render: d => `<span class="font-monospace" style="font-size:.8rem">${d}</span>` },
+        { data: 'branch' },
+        { data: 'cashier' },
+        { data: 'sold_at' },
+        { data: 'total', className: 'text-end fw-semibold' },
+        {
+            data: 'url', orderable: false, className: 'text-end',
+            render: d => `<a href="${d}" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-eye me-1"></i>Detail</a>`
+        }
+    ]
+});
+</script>
+@endpush
 @endsection
