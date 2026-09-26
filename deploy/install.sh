@@ -79,11 +79,12 @@ FRANCHISE_DOMAIN="${FRANCHISE_DOMAIN:-}"
 if [[ -z "$FRANCHISE_DOMAIN" ]]; then
     FRANCHISE_DOMAIN="$(ask 'Domain (kosong = akses via IP, tanpa TLS)' '')"
 fi
-if [[ -n "$FRANCHISE_DOMAIN" && "$SKIP_TLS" != "1" ]]; then
-    FRANCHISE_LE_EMAIL="${FRANCHISE_LE_EMAIL:-admin@${FRANCHISE_DOMAIN%%.*}com}"
-    [[ "$FRANCHISE_LE_EMAIL" == *@* ]] || FRANCHISE_LE_EMAIL="admin@example.com"
+if [[ -n "$FRANCHISE_DOMAIN" ]]; then
+    [[ "$FRANCHISE_DOMAIN" =~ ^[A-Za-z0-9.-]+$ ]] || fail "Domain tidak valid: $FRANCHISE_DOMAIN"
+    if [[ "$SKIP_TLS" != "1" ]]; then
+        FRANCHISE_LE_EMAIL="${FRANCHISE_LE_EMAIL:-$FRANCHISE_OWNER_EMAIL}"
+    fi
 fi
-[[ "$FRANCHISE_DOMAIN" =~ ^[A-Za-z0-9.-]+$ ]] || fail "Domain tidak valid: $FRANCHISE_DOMAIN"
 
 # --- paket sistem ----------------------------------------------------------
 log "Memasang paket dasar (curl, git, openssl, locale)"
